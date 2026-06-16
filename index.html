@@ -1487,16 +1487,6 @@
       font-size: .85rem;
     }
 
-
-    .luiz-dias-modal-info{
-      background:#f8f4ea; border:1px solid #eadabb; border-radius:18px; padding:10px 12px;
-      margin:-8px 0 16px 0; font-weight:900; color:#735526; display:inline-block;
-    }
-    .luiz-dias-modal-info.alerta{ background:#ffe4e4; border-color:#ffd0d0; color:#bc554a; }
-    .cliente-item.cliente-card-limpo{ grid-template-columns:64px 1fr auto !important; }
-    .cliente-botoes-limpos{ gap:10px !important; }
-    .cliente-linha-baixo .mini-chip{ font-size:.78rem; }
-
   </style>
 </head>
 <body class="bloqueado-senha">
@@ -1544,8 +1534,8 @@
       <h3>💰 Caixa</h3>
       <div class="movimento-row">
         <input type="number" id="valorMov" placeholder="R$ 0,00" step="0.01">
-        <button id="btnEntrada" class="btn-verde">+ Entrada</button>
-        <button id="btnSaida" class="btn-vermelho">- Saída</button>
+        <button type="button" id="btnEntrada" class="btn-verde">+ Entrada</button>
+        <button type="button" id="btnSaida" class="btn-vermelho">- Saída</button>
       </div>
       <div style="display: flex; gap: 8px; margin-bottom: 12px;">
         <input type="text" id="descricaoMov" placeholder="Descrição" style="flex:1; padding: 8px 14px; border-radius: 40px; border:1px solid #cfdbc9;">
@@ -1564,7 +1554,7 @@
         <input type="text" id="cliNome" placeholder="Nome" style="flex:2; padding: 10px; border-radius: 40px; border:1px solid #cfdbc9;">
         <input type="text" id="cliWhats" placeholder="WhatsApp" style="flex:1; padding: 10px; border-radius: 40px; border:1px solid #cfdbc9;">
         <input type="number" id="cliValor" placeholder="R$" step="0.01" style="width:80px; padding: 10px; border-radius: 40px; border:1px solid #cfdbc9;">
-        <button id="btnAddCliente" class="btn-cliente" style="background:#b88b4a; color:white; padding:10px 20px; border-radius:40px; border:none;">➕</button>
+        <button type="button" id="btnAddCliente" class="btn-cliente" style="background:#b88b4a; color:white; padding:10px 20px; border-radius:40px; border:none;">➕</button>
       </div>
       
       <!-- ESTATÍSTICAS DE CLIENTES -->
@@ -1605,7 +1595,7 @@
   <div class="modal-container">
     <button id="btnFecharModalX" class="modal-fechar-x" title="Fechar" aria-label="Fechar">×</button>
     <h3 id="modalClienteNome">Cliente</h3>
-    <div id="luizDiasModalInfo" class="luiz-dias-modal-info">⏳ Sem corte registrado</div>
+    
 
     <div class="perfil-cliente-area">
       <div class="perfil-cliente-box">
@@ -2533,12 +2523,6 @@
     if(!cliente) return;
     clienteAtualModal = cliente;
     document.getElementById('modalClienteNome').innerHTML = `${cliente.nome} ${cliente.whats ? `📞 ${cliente.whats}` : ''}`;
-    let infoDiasModal = textoDiasSemCorteLuiz(cliente);
-    let boxDiasModal = document.getElementById('luizDiasModalInfo');
-    if (boxDiasModal) {
-      boxDiasModal.textContent = `⏳ ${infoDiasModal.texto}`;
-      boxDiasModal.classList.toggle('alerta', !!infoDiasModal.alerta);
-    }
     document.getElementById('cliObservacoes').value = cliente.observacoes || '';
     document.getElementById('fotoPerfilImg').src = cliente.fotoPerfil || FOTO_PERFIL_PADRAO;
     
@@ -2738,9 +2722,6 @@
         renderizarClientes();
         if(clienteAtualModal) {
           document.getElementById('modalClienteNome').innerHTML = `${clienteAtualModal.nome} ${clienteAtualModal.whats ? `📞 ${clienteAtualModal.whats}` : ''}`;
-          let infoDiasModal2 = textoDiasSemCorteLuiz(clienteAtualModal);
-          let boxDiasModal2 = document.getElementById('luizDiasModalInfo');
-          if (boxDiasModal2) { boxDiasModal2.textContent = `⏳ ${infoDiasModal2.texto}`; boxDiasModal2.classList.toggle('alerta', !!infoDiasModal2.alerta); }
         }
       }
 
@@ -3142,16 +3123,16 @@
     central.innerHTML = `
       <div class="luiz-command-card">
         <strong>🚀 Central inteligente</strong>
-        <span>Sistema atualizado com visual profissional, backup rápido e proteção dos dados salvos no navegador.</span>
+        <span>Sistema atualizado com visual profissional e salvamento na nuvem Firebase.</span>
         <div class="luiz-command-actions">
-          <button class="luiz-action" id="luizBackupRapido">💾 Backup seguro</button>
-          <button class="luiz-action gold" id="luizFocoCliente">👤 Novo cliente</button>
-          <button class="luiz-action dark" id="luizFocoCaixa">💰 Caixa</button>
+          <button type="button" class="luiz-action" id="luizBackupRapido">💾 Backup seguro</button>
+          <button type="button" class="luiz-action gold" id="luizFocoCliente">👤 Novo cliente</button>
+          <button type="button" class="luiz-action dark" id="luizFocoCaixa">💰 Caixa</button>
         </div>
       </div>
       <div class="luiz-command-card"><strong>Clientes</strong><span id="luizResumoClientes">0 cadastrados</span></div>
       <div class="luiz-command-card"><strong>Receber</strong><span id="luizResumoReceber">R$ 0,00 pendente</span></div>
-      <div class="luiz-command-card"><strong>Status</strong><span>Salvamento local ativo ✅</span></div>
+      <div class="luiz-command-card"><strong>Status</strong><span>Salvamento na nuvem ativo ✅</span></div>
     `;
     topo.insertAdjacentElement('afterend', central);
 
@@ -3226,7 +3207,7 @@
 
   // Reforça normalização dos dados antigos sem apagar nada
   try{
-    luizBackupAutomaticoAntesDeRisco();
+    // Backup automático removido para não baixar JSON sozinho ao abrir/cadastrar.
     if(Array.isArray(clientes)){
       clientes.forEach(c => {
         if(!Array.isArray(c.historicoCortes)) c.historicoCortes = [];
