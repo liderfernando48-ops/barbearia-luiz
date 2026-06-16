@@ -888,7 +888,7 @@
 
     /* =========================================================
        UPGRADE PROFISSIONAL 2026 - BARBEARIA LUIZ DOS CORTES
-       Mantém o mesmo localStorage: barbeariaLuiz
+       Agora salva na nuvem Firebase
        ========================================================= */
     :root{
       --bg:#0d1412;
@@ -1121,7 +1121,7 @@
 
     /* =====================================================
        MODO VERTICAL PRO — tela 43” em pé + celular
-       Mantém os dados salvos em localStorage: barbeariaLuiz
+       Dados salvos na nuvem Firebase
     ===================================================== */
     :root{
       --luiz-bg:#eef2f0;
@@ -1373,12 +1373,7 @@
       gap: 8px;
       flex-shrink: 0;
     }
-    .cliente-botoes-limpos .corte-rapido {
-      padding: 12px 18px;
-      font-size: .85rem;
-      border-radius: 999px;
-      min-width: 112px;
-    }
+    .cliente-botoes-limpos .corte-rapido { display:none !important; }
     .btn-icone-cliente {
       width: 44px;
       height: 44px;
@@ -1492,6 +1487,16 @@
       font-size: .85rem;
     }
 
+
+    .luiz-dias-modal-info{
+      background:#f8f4ea; border:1px solid #eadabb; border-radius:18px; padding:10px 12px;
+      margin:-8px 0 16px 0; font-weight:900; color:#735526; display:inline-block;
+    }
+    .luiz-dias-modal-info.alerta{ background:#ffe4e4; border-color:#ffd0d0; color:#bc554a; }
+    .cliente-item.cliente-card-limpo{ grid-template-columns:64px 1fr auto !important; }
+    .cliente-botoes-limpos{ gap:10px !important; }
+    .cliente-linha-baixo .mini-chip{ font-size:.78rem; }
+
   </style>
 </head>
 <body class="bloqueado-senha">
@@ -1600,7 +1605,7 @@
   <div class="modal-container">
     <button id="btnFecharModalX" class="modal-fechar-x" title="Fechar" aria-label="Fechar">×</button>
     <h3 id="modalClienteNome">Cliente</h3>
-    
+    <div id="luizDiasModalInfo" class="luiz-dias-modal-info">⏳ Sem corte registrado</div>
 
     <div class="perfil-cliente-area">
       <div class="perfil-cliente-box">
@@ -1759,7 +1764,28 @@
   })();
 </script>
 
+<!-- Firebase: salvamento 100% na nuvem -->
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+
 <script>
+  // ==================== FIREBASE / NUVEM ====================
+  const firebaseConfig = {
+    apiKey: "AIzaSyClXEDLEPAX7VI95cpALSys9xSGUwIdVkc",
+    authDomain: "barbearia-luiz-2f65f.firebaseapp.com",
+    projectId: "barbearia-luiz-2f65f",
+    storageBucket: "barbearia-luiz-2f65f.firebasestorage.app",
+    messagingSenderId: "462058116567",
+    appId: "1:462058116567:web:7c9b96543289249d44a792",
+    measurementId: "G-6SLSS3JZ3L"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const dbLuiz = firebase.firestore();
+  const storageLuiz = firebase.storage();
+  const dadosDocLuiz = dbLuiz.collection('barbearia-luiz').doc('dados-principais');
+
   // ==================== DADOS GLOBAIS ====================
   let historico = [], clientes = [], nextIdHist = 1, nextCliId = 1;
   let calendarioMesAtual = new Date();
@@ -1921,53 +1947,96 @@
     });
   }
   
-  // ==================== SALVAMENTO ====================
+  // ==================== SALVAMENTO NA NUVEM FIREBASE ====================
+  let salvandoNaNuvemLuiz = false;
+
+  function prepararDadosParaSalvarLuiz() {
+    return {
+      historico: Array.isArray(historico) ? historico : [],
+      clientes: Array.isArray(clientes) ? clientes : [],
+      nextIdHist: Number(nextIdHist || 1),
+      nextCliId: Number(nextCliId || 1),
+      atualizadoEm: new Date().toISOString()
+    };
+  }
+
+  function normalizarDadosCarregadosLuiz(d) {
+    historico = Array.isArray(d.historico) ? d.historico : [];
+    clientes = Array.isArray(d.clientes) ? d.clientes : [];
+    nextIdHist = Number(d.nextIdHist || 1);
+    nextCliId = Number(d.nextCliId || 1);
+
+    for (let cliente of clientes) {
+      if(!cliente.historicoCortes) cliente.historicoCortes = [];
+      if(!cliente.observacoes) cliente.observacoes = '';
+      if(cliente.debitoPendente === undefined) cliente.debitoPendente = 0;
+      if(!cliente.valorPadrao) cliente.valorPadrao = 35;
+      if(!cliente.fotoPerfil) cliente.fotoPerfil = null;
+      if(cliente.isVIP === undefined) cliente.isVIP = false;
+      if(cliente.vipManual === undefined) cliente.vipManual = false;
+
+      if (Array.isArray(cliente.historicoCortes)) {
+        for (let corte of cliente.historicoCortes) {
+          if(corte.pago === undefined) corte.pago = false;
+          if(!corte.data && corte.dataISO) corte.data = corte.dataISO;
+        }
+      }
+
+      if(!cliente.ultimoCorteISO && cliente.historicoCortes.length > 0) {
+        let datas = cliente.historicoCortes.map(c => new Date(c.data || c.dataISO)).filter(d => !isNaN(d)).sort((a,b)=>b-a);
+        if(datas.length) cliente.ultimoCorteISO = datas[0].toISOString();
+      }
+    }
+    recalcularTotaisClientes();
+  }
+
   function salvarLocal() {
+    // Nome mantido para não quebrar o resto do programa, mas agora salva somente na nuvem.
     try {
-      localStorage.setItem('barbeariaLuiz', JSON.stringify({ historico, clientes, nextIdHist, nextCliId }));
+      salvandoNaNuvemLuiz = true;
+      dadosDocLuiz.set(prepararDadosParaSalvarLuiz())
+        .then(() => { salvandoNaNuvemLuiz = false; console.log('✅ Dados salvos na nuvem Firebase'); })
+        .catch((erro) => {
+          salvandoNaNuvemLuiz = false;
+          console.error('Erro ao salvar na nuvem Firebase:', erro);
+          showToast('⚠️ Não consegui salvar na nuvem. Verifique as regras do Firebase.', 'error');
+        });
       return true;
     } catch (erro) {
-      console.error('Erro ao salvar no navegador:', erro);
-      alert('⚠️ O navegador não conseguiu salvar porque as fotos estão muito pesadas. Nesta versão as novas fotos são comprimidas automaticamente. Tente trocar essa foto por uma imagem menor ou faça backup antes de continuar.');
+      salvandoNaNuvemLuiz = false;
+      console.error('Erro ao preparar salvamento na nuvem:', erro);
+      showToast('⚠️ Erro ao salvar na nuvem.', 'error');
       return false;
     }
   }
-  
-  function carregarLocal() {
-    let saved = localStorage.getItem('barbeariaLuiz');
-    if(saved) { 
-      try {
-        let d = JSON.parse(saved); 
-        historico = d.historico || []; 
-        clientes = d.clientes || []; 
-        nextIdHist = d.nextIdHist || 1; 
-        nextCliId = d.nextCliId || 1;
-        
-        for(let cliente of clientes) {
-          if(!cliente.historicoCortes) cliente.historicoCortes = [];
-          if(!cliente.observacoes) cliente.observacoes = '';
-          if(cliente.debitoPendente === undefined) cliente.debitoPendente = 0;
-          if(!cliente.valorPadrao) cliente.valorPadrao = 35;
-          if(!cliente.fotoPerfil) cliente.fotoPerfil = null;
-          if(cliente.isVIP === undefined) cliente.isVIP = false;
-          
-          if (cliente.historicoCortes && Array.isArray(cliente.historicoCortes)) {
-            for(let corte of cliente.historicoCortes) {
-              if(corte.pago === undefined) corte.pago = false;
-            }
-          }
-        }
-        
-        recalcularTotaisClientes();
+
+  async function carregarLocal() {
+    // Nome mantido para compatibilidade, mas agora carrega somente da nuvem.
+    try {
+      const snap = await dadosDocLuiz.get();
+      if (snap.exists) {
+        normalizarDadosCarregadosLuiz(snap.data() || {});
+        console.log('✅ Dados carregados da nuvem Firebase');
         return true;
-      } catch(e) {
-        console.error("Erro ao carregar dados:", e);
-        return false;
       }
+      historico = [];
+      clientes = [];
+      nextIdHist = 1;
+      nextCliId = 1;
+      await dadosDocLuiz.set(prepararDadosParaSalvarLuiz());
+      console.log('✅ Banco criado vazio na nuvem Firebase');
+      return true;
+    } catch(e) {
+      console.error('Erro ao carregar dados da nuvem Firebase:', e);
+      showToast('⚠️ Não consegui carregar a nuvem. Verifique Firestore/regras.', 'error');
+      historico = [];
+      clientes = [];
+      nextIdHist = 1;
+      nextCliId = 1;
+      return false;
     }
-    return false;
   }
-  
+
   function showToast(msg, tipo = 'success') {
     let toast = document.createElement('div');
     toast.className = 'toast';
@@ -2347,68 +2416,55 @@
     return `<span style="font-size: 1rem;">??</span>`;
   }
   
+  function textoDiasSemCorteLuiz(cliente) {
+    let dias = calcularDiasSemCorte(cliente);
+    if (dias === null || isNaN(dias)) return { texto: 'Sem corte registrado', alerta: true };
+    if (dias === 0) return { texto: 'Cortou hoje', alerta: false };
+    if (dias === 1) return { texto: '1 dia sem cortar', alerta: false };
+    return { texto: `${dias} dias sem cortar`, alerta: dias > 14 };
+  }
+
   function renderizarClientes() {
     if (!clientes || clientes.length === 0) {
-      document.getElementById('listaClientes').innerHTML = '<div style="padding:20px;text-align:center">nenhum cliente cadastrado</div>';
+      document.getElementById('listaClientes').innerHTML = '<div style="padding:20px;text-align:center">Nenhum cliente cadastrado ainda</div>';
       document.getElementById('totalClientes').innerHTML = '0';
       document.getElementById('clientesDebito').innerHTML = '0';
       document.getElementById('clientesPremium').innerHTML = '0';
       return;
     }
     
-    let busca = document.getElementById('buscaCliente').value.toLowerCase();
+    let busca = (document.getElementById('buscaCliente').value || '').toLowerCase();
     let filtrados = clientes.filter(c => c.nome && c.nome.toLowerCase().includes(busca));
     
     if (filtroClienteAtual === 'premium') {
-      filtrados = filtrados.filter(c => c.isVIP === true);
+      filtrados = filtrados.filter(c => c.isVIP === true || c.vipManual === true);
     } else if (filtroClienteAtual === 'debito') {
       filtrados = filtrados.filter(c => (c.debitoPendente || 0) > 0);
     } else if (filtroClienteAtual === 'semcorte') {
       filtrados = filtrados.filter(c => {
         let dias = calcularDiasSemCorte(c);
-        return dias !== null && dias >= 30;
+        return dias !== null && dias > 14;
       });
     }
     
     let totalClientes = clientes.length;
     let clientesDebito = clientes.filter(c => (c.debitoPendente || 0) > 0).length;
-    let clientesPremium = clientes.filter(c => c.isVIP === true).length;
+    let clientesPremium = clientes.filter(c => c.isVIP === true || c.vipManual === true).length;
     
     document.getElementById('totalClientes').innerHTML = totalClientes;
     document.getElementById('clientesDebito').innerHTML = clientesDebito;
     document.getElementById('clientesPremium').innerHTML = clientesPremium;
     
     let container = document.getElementById('listaClientes');
-    if(!filtrados.length) { container.innerHTML = '<div style="padding:20px;text-align:center">nenhum cliente encontrado</div>'; return; }
+    if(!filtrados.length) { container.innerHTML = '<div style="padding:20px;text-align:center">Nenhum cliente encontrado</div>'; return; }
     
     container.innerHTML = filtrados.map(c => {
-      let dias = calcularDiasSemCorte(c);
-      let atrasado = dias >= 14 && dias < 30;
-      let muitoAtrasado = dias >= 30;
-      let totalGasto = (c.historicoCortes && Array.isArray(c.historicoCortes)) ? c.historicoCortes.reduce((s, x) => s + (x.pago ? x.valor : 0), 0) : 0;
-      let pendente = c.debitoPendente || 0;
-      let isVIP = c.isVIP || false;
-      
-      let diasText = '';
-      let diasClass = '';
-      if (dias !== null && !isNaN(dias)) {
-        if (dias === 0) diasText = '🔥 Hoje mesmo!';
-        else if (dias === 1) diasText = '📆 Ontem';
-        else if (dias <= 7) diasText = `📆 Faz ${dias} dias`;
-        else if (dias <= 14) { diasText = `⚠️ ${dias} dias`; diasClass = 'dias-laranja'; }
-        else { diasText = `🔴 ${dias} dias`; diasClass = 'dias-vermelho'; }
-      } else {
-        diasText = '❌ Nunca cortou';
-        diasClass = 'dias-vermelho';
-      }
-      
+      let infoDias = textoDiasSemCorteLuiz(c);
       let classesExtras = '';
-      if (isVIP) classesExtras += ' vip-cliente';
-      if (pendente > 0) classesExtras += ' debito-cliente';
-      if (muitoAtrasado) classesExtras += ' muito-atrasado';
-      
-      let nomeClass = isVIP ? 'vip-nome' : '';
-      let cortesCount = (c.historicoCortes && Array.isArray(c.historicoCortes)) ? c.historicoCortes.length : 0;
+      if (c.isVIP || c.vipManual) classesExtras += ' vip-cliente';
+      if (infoDias.alerta) classesExtras += ' muito-atrasado';
+      let nomeClass = (c.isVIP || c.vipManual) ? 'vip-nome' : '';
+      let diasClass = infoDias.alerta ? 'dias-vermelho' : '';
       
       return `<div class="cliente-item cliente-card-limpo ${classesExtras}" data-id="${c.id}" title="Clique para ver a ficha completa do cliente">
         <div class="cliente-avatar">
@@ -2417,17 +2473,12 @@
         <div class="cliente-info">
           <div class="cliente-linha-top">
             <strong class="${nomeClass}">${c.nome}</strong>
-            ${c.whats ? `<span class="cliente-whats-mini">📞 ${c.whats}</span>` : ''}
           </div>
           <div class="cliente-linha-baixo">
-            ${isVIP ? '<span class="mini-chip vip">⭐ VIP</span>' : ''}
-            ${pendente > 0 ? `<span class="mini-chip debito">Débito R$ ${pendente.toFixed(2)}</span>` : ''}
-            ${muitoAtrasado ? `<span class="mini-chip atraso">${dias} dias sem corte</span>` : ''}
-            <span class="mini-chip">Toque para detalhes</span>
+            <span class="mini-chip ${diasClass}">⏳ ${infoDias.texto}</span>
           </div>
         </div>
         <div class="cliente-botoes-limpos">
-          <button class="corte-rapido" data-id="${c.id}" title="Registrar corte rápido">⚡ CORTAR</button>
           <button class="btn-icone-cliente btn-editar-cliente" onclick="event.stopPropagation(); editarCliente(${c.id})" title="Editar cliente">✏️</button>
           <button class="btn-icone-cliente btn-excluir-cliente" onclick="event.stopPropagation(); excluirCliente(${c.id})" title="Excluir cliente">🗑️</button>
         </div>
@@ -2436,16 +2487,9 @@
     
     document.querySelectorAll('.cliente-item').forEach(el => {
       el.addEventListener('click', (e) => {
-        if(e.target.classList.contains('corte-rapido') || e.target.classList.contains('btn-editar-cliente') || e.target.classList.contains('btn-excluir-cliente')) return;
+        if(e.target.classList.contains('btn-editar-cliente') || e.target.classList.contains('btn-excluir-cliente')) return;
         let id = parseInt(el.dataset.id);
         abrirModalCliente(id);
-      });
-    });
-    document.querySelectorAll('.corte-rapido').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        let id = parseInt(btn.dataset.id);
-        registrarCorteRapido(id);
       });
     });
   }
@@ -2489,6 +2533,12 @@
     if(!cliente) return;
     clienteAtualModal = cliente;
     document.getElementById('modalClienteNome').innerHTML = `${cliente.nome} ${cliente.whats ? `📞 ${cliente.whats}` : ''}`;
+    let infoDiasModal = textoDiasSemCorteLuiz(cliente);
+    let boxDiasModal = document.getElementById('luizDiasModalInfo');
+    if (boxDiasModal) {
+      boxDiasModal.textContent = `⏳ ${infoDiasModal.texto}`;
+      boxDiasModal.classList.toggle('alerta', !!infoDiasModal.alerta);
+    }
     document.getElementById('cliObservacoes').value = cliente.observacoes || '';
     document.getElementById('fotoPerfilImg').src = cliente.fotoPerfil || FOTO_PERFIL_PADRAO;
     
@@ -2688,6 +2738,9 @@
         renderizarClientes();
         if(clienteAtualModal) {
           document.getElementById('modalClienteNome').innerHTML = `${clienteAtualModal.nome} ${clienteAtualModal.whats ? `📞 ${clienteAtualModal.whats}` : ''}`;
+          let infoDiasModal2 = textoDiasSemCorteLuiz(clienteAtualModal);
+          let boxDiasModal2 = document.getElementById('luizDiasModalInfo');
+          if (boxDiasModal2) { boxDiasModal2.textContent = `⏳ ${infoDiasModal2.texto}`; boxDiasModal2.classList.toggle('alerta', !!infoDiasModal2.alerta); }
         }
       }
 
@@ -2892,7 +2945,7 @@
     showToast('CSV exportado', 'success');
   }
   
-  function limparTudo() { if(confirm('APAGAR TUDO?')) { localStorage.clear(); location.reload(); } }
+  async function limparTudo() { if(confirm('APAGAR TUDO DA NUVEM?')) { historico=[]; clientes=[]; nextIdHist=1; nextCliId=1; await dadosDocLuiz.set(prepararDadosParaSalvarLuiz()); renderizarTudo(); showToast('Nuvem zerada!', 'info'); } }
   
   // ==================== RENDERIZAÇÃO GERAL ====================
   function renderizarTudo() {
@@ -3060,56 +3113,24 @@
   window.excluirCliente = excluirCliente;
   
   // ==================== INICIALIZAÇÃO ====================
-  if(!carregarLocal() || (historico.length===0 && clientes.length===0)) {
-    let cliente1 = { 
-      id: nextCliId++, 
-      nome: 'Marcos Andrade', 
-      whats: '11977777777', 
-      valorPadrao: 45, 
-      historicoCortes: [
-        { data: new Date().toISOString(), valor: 45, pago: true },
-        { data: new Date(Date.now() - 7*24*60*60*1000).toISOString(), valor: 45, pago: true }
-      ], 
-      ultimoCorteISO: new Date().toISOString(), 
-      debitoPendente: 0, 
-      observacoes: '', 
-      fotoAntes: null, 
-      fotoDepois: null,
-      fotoPerfil: null,
-      isVIP: false
-    };
-    
-    let cliente2 = { 
-      id: nextCliId++, 
-      nome: 'Rafael Souza', 
-      whats: '11966666666', 
-      valorPadrao: 60, 
-      historicoCortes: [
-        { data: new Date().toISOString(), valor: 60, pago: false },
-        { data: new Date(Date.now() - 14*24*60*60*1000).toISOString(), valor: 60, pago: true }
-      ], 
-      ultimoCorteISO: new Date().toISOString(), 
-      debitoPendente: 60, 
-      observacoes: '', 
-      fotoAntes: null, 
-      fotoDepois: null,
-      fotoPerfil: null,
-      isVIP: false
-    };
-    
-    clientes.push(cliente1, cliente2);
-    
-    let agora = new Date();
-    historico.push({ id: nextIdHist++, tipo:'entrada', valor:1250, descricao:'Corte - Luiz (PAGO)', dataISO:agora.toISOString(), dataStr:agora.toLocaleDateString('pt-BR'), horaStr:'10:20' });
-    historico.push({ id: nextIdHist++, tipo:'saida', valor:300, descricao:'Aluguel', dataISO:agora.toISOString(), dataStr:agora.toLocaleDateString('pt-BR'), horaStr:'09:15' });
-    salvarLocal();
+  async function iniciarSistemaLuizNaNuvem() {
+    await carregarLocal();
+    recalcularTotaisClientes();
+    renderizarTudo();
+    showToast('☁️ Sistema conectado na nuvem Firebase', 'success');
+
+    // Atualização em tempo real: se abrir em outro celular/computador, atualiza sozinho.
+    dadosDocLuiz.onSnapshot((snap) => {
+      if (!snap.exists || salvandoNaNuvemLuiz) return;
+      normalizarDadosCarregadosLuiz(snap.data() || {});
+      renderizarTudo();
+    }, (erro) => console.warn('Listener Firebase:', erro));
   }
-  
-  recalcularTotaisClientes();
-  renderizarTudo();
+
+  iniciarSistemaLuizNaNuvem();
 
   // ==================== UPGRADE PROFISSIONAL SEGURO ====================
-  // Não troca a chave do localStorage. Seus dados continuam na chave: barbeariaLuiz
+  // Salvamento principal agora é na nuvem Firebase.
   function luizCriarCentralProfissional(){
     if(document.getElementById('luizCommandCenter')) return;
     const topo = document.querySelector('.topo');
@@ -3157,20 +3178,18 @@
   }
 
   function luizBackupAutomaticoAntesDeRisco(){
-    try{
-      const atual = localStorage.getItem('barbeariaLuiz');
-      if(atual) localStorage.setItem('barbeariaLuiz_backup_automatico', atual);
-    }catch(e){}
+    try{ exportarBackup(); }catch(e){}
   }
 
-  // Deixa o botão limpar mais seguro e não usa localStorage.clear()
-  limparTudo = function(){
-    if(confirm('⚠️ Isso apaga somente os dados da Barbearia Luiz deste navegador. Fazer backup antes?')) {
+  // Botão limpar agora apaga os dados da nuvem Firebase, não do navegador.
+  limparTudo = async function(){
+    if(confirm('⚠️ Isso vai apagar TODOS os dados salvos na NUVEM Firebase. Fazer backup antes?')) {
       exportarBackup();
-      if(confirm('Backup baixado? Confirmar apagar agora?')) {
-        luizBackupAutomaticoAntesDeRisco();
-        localStorage.removeItem('barbeariaLuiz');
-        location.reload();
+      if(confirm('Backup baixado? Confirmar apagar a nuvem agora?')) {
+        historico=[]; clientes=[]; nextIdHist=1; nextCliId=1;
+        await dadosDocLuiz.set(prepararDadosParaSalvarLuiz());
+        renderizarTudo();
+        showToast('☁️ Nuvem zerada!', 'info');
       }
     }
   };
