@@ -1456,7 +1456,7 @@
     </div>
 
     <div class="card">
-      <h3>👥 Clientes</h3>
+      <h3>👤 Clientes VIP</h3>
       <div class="cadastro-cliente" style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
         <input type="text" id="cliNome" placeholder="Nome" style="flex:2; padding: 10px; border-radius: 40px; border:1px solid #cfdbc9;">
         <input type="text" id="cliWhats" placeholder="WhatsApp" style="flex:1; padding: 10px; border-radius: 40px; border:1px solid #cfdbc9;">
@@ -4002,313 +4002,70 @@
 </script>
 
 
-
-<!-- =========================================================
-     LIMPEZA FINAL LUIZ - TELA PROFISSIONAL / CELULAR / TV VERTICAL
-     ========================================================= -->
-<style id="luiz-limpeza-final-css">
-  /* login real: nada aparece antes da senha */
-  body:not(.luiz-logado) .app,
-  body:not(.luiz-logado) #luizLockBtn{display:none!important;}
-  #luizLoginInicial{
-    position:fixed; inset:0; z-index:999999; display:flex; align-items:center; justify-content:center;
-    padding:24px; background:radial-gradient(circle at 20% 10%, rgba(214,168,79,.22), transparent 28%), linear-gradient(135deg,#0f1c15,#284a32 55%,#f7f2e8);
+<!-- ===== CORREÇÃO ANTI-TELA-BRANCA LUIZ ===== -->
+<style id="correcao-tela-branca-luiz">
+  html, body {
+    width: 100% !important;
+    min-height: 100vh !important;
+    overflow-x: hidden !important;
   }
-  body.luiz-logado #luizLoginInicial{display:none!important;}
-  .luiz-login-card{width:min(430px,100%); background:rgba(255,255,255,.95); border:1px solid rgba(214,168,79,.35); border-radius:30px; padding:28px; box-shadow:0 35px 90px rgba(0,0,0,.28); text-align:center;}
-  .luiz-login-card h2{font-size:1.65rem; color:#203328; margin-bottom:8px;}
-  .luiz-login-card p{color:#6b776e; font-weight:700; margin-bottom:18px;}
-  .luiz-login-card input{width:100%; border:1px solid #d8dcca; border-radius:18px; padding:15px; font-size:1.25rem; text-align:center; font-weight:900; letter-spacing:.18em;}
-  .luiz-login-card button{width:100%; border:0; border-radius:999px; margin-top:14px; padding:14px; font-weight:900; color:white; cursor:pointer; background:linear-gradient(135deg,#1f7a45,#35b86b); font-size:1rem;}
-  #luizLoginErro{display:none; margin-top:12px; color:#b55445; font-weight:900;}
 
-  /* corta poluição visual */
-  .filtros-rapidos,
-  #luizCommandCenter,
-  .luiz-command-center,
-  #luizVipFuncional,
-  .vip-beneficios-card,
-  #vipBeneficiosLuizBox,
-  [id*="VipFuncional"],
-  [id*="vipFuncional"]{display:none!important;}
-
-  .topo{margin-bottom:14px!important; padding:24px!important;}
-  .topo p{font-size:.72rem!important; opacity:.72!important;}
-
-  /* dashboard limpo: tira cards soltos repetidos */
-  .dashboard{display:none!important;}
-
-  /* faturamento mais compacto e organizado */
-  .faturamento-moderno{padding:18px!important; border-radius:28px!important; margin-bottom:16px!important;}
-  .faturamento-header{margin-bottom:12px!important; padding-bottom:10px!important;}
-  .faturamento-header h3{font-size:1.05rem!important;}
-  .total-ano{font-size:.78rem!important; padding:8px 14px!important;}
-  .barra-item{margin-bottom:12px!important;}
-  .barra-container{height:20px!important;}
-  .tabela-resumo{margin-top:12px!important; padding-top:10px!important; overflow-x:auto;}
-
-  /* só duas áreas principais: caixa / clientes / calendário */
-  .grid-3{display:grid!important; grid-template-columns: minmax(280px,.9fr) minmax(360px,1.45fr) minmax(260px,.8fr)!important; gap:16px!important; align-items:start!important;}
-  .card{border-radius:28px!important; padding:18px!important; box-shadow:0 12px 30px rgba(22,35,28,.07)!important;}
-  .card h3{font-size:1.08rem!important; margin-bottom:14px!important;}
-
-  /* cadastro rápido: só nome, whatsapp e botão */
-  #cliValor{display:none!important;}
-  .cadastro-cliente{display:grid!important; grid-template-columns:1.2fr 1fr 58px!important; gap:10px!important; margin-bottom:12px!important;}
-  .cadastro-cliente input{width:100%!important; min-height:48px!important; border-radius:999px!important; font-size:.95rem!important;}
-  #btnAddCliente{height:48px!important; width:58px!important; padding:0!important; border-radius:999px!important; font-size:1.25rem!important;}
-
-  /* estatísticas de clientes com cortes hoje junto */
-  .clientes-stats{display:grid!important; grid-template-columns:repeat(4,1fr)!important; gap:8px!important; padding:10px!important; border-radius:22px!important; background:#f7f8f4!important;}
-  .stat-cliente{padding:8px 6px!important; border-radius:16px!important; background:rgba(255,255,255,.72)!important;}
-  .stat-cliente .numero{font-size:1.45rem!important; line-height:1!important;}
-  .stat-cliente .label{font-size:.68rem!important; margin-top:4px!important;}
-
-  .busca-cliente input{width:100%!important; min-height:48px!important; border-radius:999px!important; border:1px solid #cfdbc9!important; padding:0 16px!important; font-size:1rem!important;}
-  #listaClientes{max-height:640px!important; overflow-y:auto!important; overflow-x:hidden!important; padding-right:3px!important;}
-
-  /* cartão do cliente: só foto, nome, cortar e detalhes */
-  .cliente-item.cliente-card-limpo,
-  .cliente-item{
-    min-height:88px!important; padding:14px!important; border-radius:24px!important;
-    display:grid!important; grid-template-columns:62px 1fr auto!important; align-items:center!important; gap:12px!important;
-    overflow:hidden!important; margin-bottom:10px!important;
+  body {
+    display: block !important;
   }
-  .cliente-avatar{width:56px!important; height:56px!important;}
-  .cliente-info{min-width:0!important; display:block!important;}
-  .cliente-linha-top{display:block!important;}
-  .cliente-linha-top strong{font-size:1.08rem!important; max-width:100%!important; white-space:nowrap!important; overflow:hidden!important; text-overflow:ellipsis!important; display:block!important; color:#213329!important;}
+
+  .app {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    width: min(100%, 1500px) !important;
+  }
+
+  /* Em computador normal, mantém tudo bem organizado em 3 colunas */
+  @media (min-width: 901px) and (orientation: landscape) {
+    .dashboard {
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+    .grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+  }
+
+  /* Evita os cards de cliente ficarem cortando número/texto */
+  .cliente-item,
+  .cliente-info,
+  .cliente-nome,
+  .cliente-linha-top,
+  .cliente-linha-baixo {
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
   .cliente-whats-mini,
-  .cliente-linha-baixo,
-  .cliente-acoes,
-  .premium-badge,
-  .pendencia-badge,
-  .dias-sem-corte,
-  .ultimo-corte-chip,
-  .mini-chip{display:none!important;}
-  .cliente-botoes-limpos{display:flex!important; align-items:center!important; justify-content:flex-end!important; gap:8px!important; min-width:0!important;}
-  .cliente-botoes-limpos .btn-editar-cliente,
-  .cliente-botoes-limpos .btn-excluir-cliente{display:none!important;}
-  .cliente-botoes-limpos .corte-rapido{min-width:108px!important; height:48px!important; padding:0 16px!important; border-radius:999px!important; font-size:.82rem!important; white-space:nowrap!important;}
-  .btn-detalhes-luiz{height:48px; border:0; border-radius:999px; padding:0 14px; cursor:pointer; font-weight:900; background:#eef3ea; color:#50634f; white-space:nowrap;}
-  .btn-detalhes-luiz:hover{transform:scale(.98); background:#e2ebdd;}
-
-  /* botões de backup menores e não poluindo */
-  .backup-section{justify-content:center!important; border-radius:24px!important; padding:8px!important; gap:8px!important;}
-  .btn-backup{padding:9px 13px!important; font-size:.82rem!important;}
-
-  /* modal com informações completas */
-  .modal-container{border-radius:28px!important; max-width:720px!important;}
-
-  @media (orientation: portrait) and (min-width:900px){
-    .app{max-width:820px!important;}
-    .grid-3{grid-template-columns:1fr!important;}
-    #listaClientes{max-height:900px!important;}
-    .cliente-item.cliente-card-limpo,.cliente-item{grid-template-columns:70px 1fr auto!important; min-height:96px!important;}
-    .cliente-avatar{width:64px!important; height:64px!important;}
-    .cliente-linha-top strong{font-size:1.22rem!important;}
-  }
-  @media (max-width:900px){
-    body{padding:10px!important;}
-    .app{padding:10px!important; border-radius:24px!important;}
-    .grid-3{grid-template-columns:1fr!important;}
-    .faturamento-moderno{display:none!important;} /* no celular abre direto no que importa: clientes */
-    .cadastro-cliente{grid-template-columns:1fr!important;}
-    #btnAddCliente{width:100%!important;}
-    .clientes-stats{grid-template-columns:repeat(2,1fr)!important;}
-    .cliente-item.cliente-card-limpo,.cliente-item{grid-template-columns:58px 1fr!important; gap:10px!important;}
-    .cliente-botoes-limpos{grid-column:1/-1!important; width:100%!important; display:grid!important; grid-template-columns:1fr 1fr!important;}
-    .cliente-botoes-limpos .corte-rapido,.btn-detalhes-luiz{width:100%!important; min-width:0!important;}
+  .cliente-linha-top strong {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
   }
 </style>
 
-<div id="luizLoginInicial" aria-label="Login da Barbearia Luiz">
-  <div class="luiz-login-card">
-    <h2>✂️ Barbearia Luiz</h2>
-    <p>Digite a senha para entrar</p>
-    <input id="luizLoginSenha" type="password" inputmode="numeric" placeholder="••••••" autocomplete="off">
-    <button id="luizLoginEntrar" type="button">Entrar no sistema</button>
-    <div id="luizLoginErro">Senha incorreta</div>
-  </div>
-</div>
-
-<script id="luiz-limpeza-final-js">
-(function(){
-  const SENHA = '775522';
-  const STORAGE = 'luiz_login_ok';
-
-  function liberar(){
+<script id="correcao-tela-branca-luiz-js">
+  // Garante que o sistema nunca fique escondido por erro de classe/login.
+  document.addEventListener('DOMContentLoaded', function () {
     document.body.classList.add('luiz-logado');
-    try{ sessionStorage.setItem(STORAGE,'1'); }catch(e){}
-  }
-  function bloquear(){
-    document.body.classList.remove('luiz-logado');
-    try{ sessionStorage.removeItem(STORAGE); }catch(e){}
-  }
-  window.luizBloquearSistema = bloquear;
-
-  function iniciarLogin(){
-    try{ if(sessionStorage.getItem(STORAGE)==='1') liberar(); }catch(e){}
-    const input = document.getElementById('luizLoginSenha');
-    const btn = document.getElementById('luizLoginEntrar');
-    const erro = document.getElementById('luizLoginErro');
-    function tentar(){
-      if((input.value||'').trim() === SENHA){ erro.style.display='none'; liberar(); setTimeout(()=>{ try{ input.value=''; }catch(e){} },50); }
-      else { erro.style.display='block'; input.select(); }
+    const app = document.querySelector('.app');
+    if (app) {
+      app.style.setProperty('display', 'block', 'important');
+      app.style.setProperty('visibility', 'visible', 'important');
+      app.style.setProperty('opacity', '1', 'important');
     }
-    if(btn) btn.onclick = tentar;
-    if(input) input.addEventListener('keydown', e=>{ if(e.key==='Enter') tentar(); });
-    setTimeout(()=>{ if(input && !document.body.classList.contains('luiz-logado')) input.focus(); },250);
-
-    // reaproveita botão antigo: vira bloquear/desbloquear
-    const lock = document.getElementById('luizLockBtn');
-    if(lock){
-      lock.innerHTML = '🔒 Bloquear';
-      lock.onclick = function(ev){ ev.preventDefault(); bloquear(); setTimeout(()=>input&&input.focus(),100); };
-    }
-  }
-
-  function parseDataCorte(corte){
-    if(!corte) return null;
-    const raw = corte.data || corte.dataISO || corte.dataStr || corte.date;
-    if(!raw) return null;
-    let d = new Date(raw);
-    if(isNaN(d) && /^\d{2}\/\d{2}\/\d{4}/.test(raw)){
-      const [dia,mes,ano] = raw.split('/'); d = new Date(Number(ano), Number(mes)-1, Number(dia));
-    }
-    return isNaN(d) ? null : d;
-  }
-  function ultimoCorte(cliente){
-    let datas = [];
-    if(cliente && cliente.ultimoCorteISO){ const d = new Date(cliente.ultimoCorteISO); if(!isNaN(d)) datas.push(d); }
-    if(cliente && Array.isArray(cliente.historicoCortes)){
-      cliente.historicoCortes.forEach(c=>{ const d=parseDataCorte(c); if(d) datas.push(d); });
-    }
-    if(!datas.length) return null;
-    datas.sort((a,b)=>b-a);
-    return datas[0];
-  }
-  window.calcularDiasSemCorte = function(cliente){
-    const d = ultimoCorte(cliente);
-    if(!d) return null;
-    const hoje = new Date();
-    const a = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-    const b = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    return Math.max(0, Math.floor((a-b)/86400000));
-  };
-
-  function cortesHojeQtd(){
-    const hoje = new Date().toLocaleDateString('pt-BR');
-    let qtd = 0;
-    if(Array.isArray(clientes)){
-      clientes.forEach(c=>{
-        if(Array.isArray(c.historicoCortes)){
-          c.historicoCortes.forEach(corte=>{ const d=parseDataCorte(corte); if(d && d.toLocaleDateString('pt-BR')===hoje) qtd++; });
-        }
-      });
-    }
-    return qtd;
-  }
-  function atualizarStatsClientes(){
-    const stats = document.getElementById('clientesStats');
-    if(!stats) return;
-    if(!document.getElementById('clientesCortesHoje')){
-      stats.insertAdjacentHTML('beforeend','<div class="stat-cliente"><div class="numero" id="clientesCortesHoje">0</div><div class="label">Cortes Hoje</div></div>');
-    }
-    const el = document.getElementById('clientesCortesHoje');
-    if(el) el.textContent = cortesHojeQtd();
-  }
-
-  function limparBlocosPoluidos(){
-    // remove blocos grandes de VIP / central que poluem a tela principal
-    document.querySelectorAll('section,div').forEach(el=>{
-      if(!el || !el.textContent) return;
-      const t = el.textContent.trim();
-      if((t.includes('Programa VIP funcional') || t.includes('ÁREA VIP') || t.includes('Área VIP') || t.includes('Benefícios: a cada')) && el.offsetHeight > 80){
-        el.style.display='none';
-      }
-    });
-  }
-
-  function simplificarListaClientes(){
-    const container = document.getElementById('listaClientes');
-    if(!container || !Array.isArray(window.clientes || clientes)) return;
-    const buscaEl = document.getElementById('buscaCliente');
-    const busca = (buscaEl && buscaEl.value || '').toLowerCase().trim();
-    let lista = clientes.filter(c => !busca || (c.nome||'').toLowerCase().includes(busca) || (c.whats||'').toLowerCase().includes(busca));
-    if(!lista.length){ container.innerHTML = '<div style="padding:20px;text-align:center;color:#7a8a74;font-weight:800">Nenhum cliente encontrado</div>'; atualizarStatsClientes(); return; }
-    container.innerHTML = lista.map(c=>{
-      const id = Number(c.id);
-      const foto = c.fotoPerfil ? `<img src="${c.fotoPerfil}" alt="${(c.nome||'Cliente').replace(/"/g,'')}">` : `<span>${(c.nome||'?').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</span>`;
-      const pend = Number(c.debitoPendente||0);
-      const classe = (pend>0?' debito-cliente':'') + (c.isVIP?' vip-cliente':'');
-      return `<div class="cliente-item cliente-card-limpo${classe}" data-id="${id}">
-        <div class="cliente-avatar">${foto}</div>
-        <div class="cliente-info"><div class="cliente-linha-top"><strong>${c.nome||'Cliente'}</strong></div></div>
-        <div class="cliente-botoes-limpos">
-          <button class="corte-rapido" type="button" data-id="${id}">⚡ CORTAR</button>
-          <button class="btn-detalhes-luiz" type="button" data-id="${id}">Detalhes</button>
-        </div>
-      </div>`;
-    }).join('');
-    container.querySelectorAll('.cliente-item').forEach(card=>{
-      card.addEventListener('click', ev=>{
-        if(ev.target.closest('button')) return;
-        const id = Number(card.dataset.id);
-        if(typeof abrirModalCliente==='function') abrirModalCliente(id);
-      });
-    });
-    container.querySelectorAll('.corte-rapido').forEach(btn=>{
-      btn.addEventListener('click', ev=>{ ev.preventDefault(); ev.stopPropagation(); if(typeof registrarCorteRapido==='function') registrarCorteRapido(Number(btn.dataset.id)); });
-    });
-    container.querySelectorAll('.btn-detalhes-luiz').forEach(btn=>{
-      btn.addEventListener('click', ev=>{ ev.preventDefault(); ev.stopPropagation(); if(typeof abrirModalCliente==='function') abrirModalCliente(Number(btn.dataset.id)); });
-    });
-    atualizarStatsClientes();
-  }
-
-  function ajustarCadastroRapido(){
-    const titulo = [...document.querySelectorAll('.card h3')].find(h=>h.textContent.includes('Clientes'));
-    if(titulo) titulo.innerHTML = '👥 Clientes';
-    const valor = document.getElementById('cliValor');
-    if(valor){ valor.value = valor.value || '35'; }
-    const btn = document.getElementById('btnAddCliente');
-    if(btn && !btn.__luizValorPadrao){
-      btn.__luizValorPadrao = true;
-      btn.addEventListener('click', ()=>{ const v=document.getElementById('cliValor'); if(v && !v.value) v.value='35'; }, true);
-    }
-  }
-
-  function aplicarLimpeza(){
-    ajustarCadastroRapido();
-    limparBlocosPoluidos();
-    simplificarListaClientes();
-  }
-
-  // intercepta renderização original para sempre limpar depois
-  const antigoRender = window.renderizarClientes;
-  if(typeof antigoRender === 'function'){
-    window.renderizarClientes = function(){
-      try{ antigoRender.apply(this, arguments); }catch(e){ console.warn(e); }
-      setTimeout(simplificarListaClientes, 0);
-    };
-  }
-  const antigoTudo = window.renderizarTudo;
-  if(typeof antigoTudo === 'function'){
-    window.renderizarTudo = function(){
-      const r = antigoTudo.apply(this, arguments);
-      setTimeout(aplicarLimpeza, 30);
-      return r;
-    };
-  }
-
-  document.addEventListener('DOMContentLoaded', function(){
-    iniciarLogin();
-    setTimeout(aplicarLimpeza, 200);
-    setTimeout(aplicarLimpeza, 900);
-    setInterval(()=>{ limparBlocosPoluidos(); atualizarStatsClientes(); }, 2000);
   });
-})();
 </script>
 
 </body>
