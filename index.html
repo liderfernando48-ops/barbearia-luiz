@@ -3142,8 +3142,7 @@
       document.querySelector('#cliNome')?.scrollIntoView({behavior:'smooth', block:'center'});
     };
     document.getElementById('luizFocoCaixa').onclick = () => {
-      document.getElementById('valorMov')?.focus();
-      document.querySelector('#valorMov')?.scrollIntoView({behavior:'smooth', block:'center'});
+      // Removido: não puxa mais a tela automaticamente para baixo.
     };
   }
 
@@ -3159,19 +3158,17 @@
   }
 
   function luizBackupAutomaticoAntesDeRisco(){
-    try{ exportarBackup(); }catch(e){}
+    // Desativado: não baixa JSON sozinho. Backup só no botão Backup.
+    return false;
   }
 
   // Botão limpar agora apaga os dados da nuvem Firebase, não do navegador.
   limparTudo = async function(){
-    if(confirm('⚠️ Isso vai apagar TODOS os dados salvos na NUVEM Firebase. Fazer backup antes?')) {
-      exportarBackup();
-      if(confirm('Backup baixado? Confirmar apagar a nuvem agora?')) {
-        historico=[]; clientes=[]; nextIdHist=1; nextCliId=1;
-        await dadosDocLuiz.set(prepararDadosParaSalvarLuiz());
-        renderizarTudo();
-        showToast('☁️ Nuvem zerada!', 'info');
-      }
+    if(confirm('⚠️ Isso vai apagar TODOS os dados salvos na NUVEM Firebase. Confirmar?')) {
+      historico=[]; clientes=[]; nextIdHist=1; nextCliId=1;
+      await dadosDocLuiz.set(prepararDadosParaSalvarLuiz());
+      renderizarTudo();
+      showToast('☁️ Nuvem zerada!', 'info');
     }
   };
   const btnLimparSeguro = document.getElementById('btnLimparTudo');
@@ -3836,6 +3833,43 @@
   document.addEventListener('DOMContentLoaded', function(){
     setTimeout(function(){ atualizarVipLuizManual(); colocarBotoesVip(); if(typeof salvarLocal==='function') salvarLocal(); },500);
     setInterval(colocarBotoesVip, 2500);
+  });
+})();
+</script>
+
+
+<script>
+/* ===== CORREÇÃO FINAL LUIZ: sem download automático e sem pular tela ===== */
+(function(){
+  // Ao atualizar a página, começa no topo e não volta para o meio/baixo.
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  window.addEventListener('load', function(){ setTimeout(function(){ window.scrollTo(0,0); }, 50); });
+
+  // Trava qualquer clique automático em links de download criados pelo programa.
+  // Só libera download quando o Luiz clicar em Backup, CSV, Antes, Depois ou Comparativo.
+  window.__downloadPermitidoLuiz = false;
+  const permitirPorUmSegundo = function(){
+    window.__downloadPermitidoLuiz = true;
+    setTimeout(function(){ window.__downloadPermitidoLuiz = false; }, 1200);
+  };
+  ['btnExportarBackup','btnExportarExcel','btnEnviarAntes','btnEnviarDepois','btnEnviarComparativo'].forEach(function(id){
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('click', permitirPorUmSegundo, true);
+  });
+
+  const clickOriginal = HTMLAnchorElement.prototype.click;
+  HTMLAnchorElement.prototype.click = function(){
+    if (this.hasAttribute('download') && !window.__downloadPermitidoLuiz) {
+      console.warn('Download automático bloqueado:', this.download || this.href);
+      try { showToast('Download automático bloqueado. Use o botão Backup se quiser baixar arquivo.', 'info'); } catch(e) {}
+      return false;
+    }
+    return clickOriginal.apply(this, arguments);
+  };
+
+  // Garante que botões não tentem enviar formulário/atualizar tela.
+  document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('button').forEach(function(btn){ if(!btn.getAttribute('type')) btn.setAttribute('type','button'); });
   });
 })();
 </script>
