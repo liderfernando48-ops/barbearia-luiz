@@ -1407,9 +1407,107 @@
       .cliente-linha-top strong { max-width: 190px; }
     }
 
+  
+
+    /* ===== BLOQUEIO COM SENHA - LUIZ ===== */
+    body.bloqueado-senha {
+      overflow: hidden;
+    }
+    body.bloqueado-senha .app {
+      filter: blur(10px);
+      pointer-events: none;
+      user-select: none;
+      transform: scale(0.995);
+    }
+    #telaSenhaLuiz {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(8, 14, 11, 0.46);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    #telaSenhaLuiz.liberado {
+      display: none;
+    }
+    .senha-card-luiz {
+      width: min(420px, 94vw);
+      background: rgba(255,255,255,0.94);
+      border: 1px solid rgba(214,168,79,.35);
+      border-radius: 30px;
+      padding: 26px 22px;
+      text-align: center;
+      box-shadow: 0 30px 80px rgba(0,0,0,.32);
+    }
+    .senha-card-luiz .cadeado {
+      font-size: 3rem;
+      margin-bottom: 8px;
+    }
+    .senha-card-luiz h2 {
+      color: #17251b;
+      font-size: 1.45rem;
+      margin-bottom: 8px;
+    }
+    .senha-card-luiz p {
+      color: #6f7f75;
+      font-size: .88rem;
+      margin-bottom: 18px;
+    }
+    #senhaLuizInput {
+      width: 100%;
+      border: 2px solid #d9e2d5;
+      border-radius: 999px;
+      padding: 15px 18px;
+      font-size: 1.35rem;
+      font-weight: 800;
+      text-align: center;
+      letter-spacing: 8px;
+      outline: none;
+    }
+    #senhaLuizInput:focus {
+      border-color: #b88b4a !important;
+      box-shadow: 0 0 0 5px rgba(184,139,74,.18);
+    }
+    #btnEntrarSenhaLuiz {
+      width: 100%;
+      margin-top: 14px;
+      border: none;
+      border-radius: 999px;
+      padding: 14px 18px;
+      background: linear-gradient(135deg, #17251b, #2b6e3c);
+      color: white;
+      font-weight: 900;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    #erroSenhaLuiz {
+      min-height: 22px;
+      color: #bc6f5a;
+      font-weight: 800;
+      margin-top: 10px;
+      font-size: .85rem;
+    }
+
   </style>
 </head>
-<body>
+<body class="bloqueado-senha">
+
+<!-- TELA DE SENHA LUIZ -->
+<div id="telaSenhaLuiz" role="dialog" aria-modal="true">
+  <div class="senha-card-luiz">
+    <div class="cadeado">🔒</div>
+    <h2>Acesso protegido</h2>
+    <p>Digite a senha para liberar o sistema da barbearia.</p>
+    <input id="senhaLuizInput" type="password" inputmode="numeric" autocomplete="off" maxlength="6" placeholder="••••" autofocus>
+    <button id="btnEntrarSenhaLuiz" type="button">ENTRAR</button>
+    <div id="erroSenhaLuiz"></div>
+  </div>
+</div>
+
 <div class="app">
   <div class="topo">
     <h1>✂️ Barbearia Luiz dos Cortes</h1>
@@ -1609,6 +1707,57 @@
 <input type="file" id="importFileInput" accept=".json" style="display:none">
 <input type="file" id="fotoUploadInput" accept="image/*" style="display:none">
 <input type="file" id="avatarUploadInput" accept="image/*" style="display:none">
+
+
+<script>
+  // ===== BLOQUEIO COM SENHA - LUIZ =====
+  (function(){
+    const SENHA_CORRETA_LUIZ = "8605";
+
+    function liberarSistemaLuiz(){
+      document.body.classList.remove('bloqueado-senha');
+      const tela = document.getElementById('telaSenhaLuiz');
+      if (tela) tela.classList.add('liberado');
+      sessionStorage.setItem('luizSistemaLiberado', 'sim');
+    }
+
+    function verificarSenhaLuiz(){
+      const input = document.getElementById('senhaLuizInput');
+      const erro = document.getElementById('erroSenhaLuiz');
+      const senhaDigitada = (input?.value || '').trim();
+
+      if (senhaDigitada === SENHA_CORRETA_LUIZ) {
+        liberarSistemaLuiz();
+        return;
+      }
+
+      if (erro) erro.textContent = 'Senha errada. Tente novamente.';
+      if (input) {
+        input.value = '';
+        input.focus();
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+      const input = document.getElementById('senhaLuizInput');
+      const botao = document.getElementById('btnEntrarSenhaLuiz');
+
+      if (sessionStorage.getItem('luizSistemaLiberado') === 'sim') {
+        liberarSistemaLuiz();
+      } else {
+        document.body.classList.add('bloqueado-senha');
+        setTimeout(() => input && input.focus(), 250);
+      }
+
+      if (botao) botao.addEventListener('click', verificarSenhaLuiz);
+      if (input) {
+        input.addEventListener('keydown', function(e){
+          if (e.key === 'Enter') verificarSenhaLuiz();
+        });
+      }
+    });
+  })();
+</script>
 
 <script>
   // ==================== DADOS GLOBAIS ====================
@@ -3538,319 +3687,9 @@
 
 
 
-<!-- =========================================================
-     PROTEÇÃO LUIZ: MODO VITALÍCIO + SENHA DE ALTERAÇÃO
-     Mantém o mesmo localStorage: barbeariaLuiz
-     Senha de edição: 775522
-========================================================= -->
-<style>
-  :root{
-    --luiz-ouro:#d2a24d;
-    --luiz-verde:#28743d;
-    --luiz-escuro:#263728;
-    --luiz-fundo:#f7f5ed;
-  }
-
-  /* Ajuste para usar por muitos anos em computador, tela vertical e celular */
-  html{ scroll-behavior:smooth; }
-  body{ min-height:100vh; }
-  .app{ width:min(100%, 1500px); }
-
-  @media (orientation: portrait) and (min-width: 700px){
-    body{ padding:22px 18px; background:linear-gradient(180deg,#f8f6ee,#eef4ee); }
-    .app{ max-width:980px; margin:0 auto; }
-    .dashboard{ grid-template-columns:1fr; gap:14px; }
-    .grid-3{ grid-template-columns:1fr; gap:18px; }
-    .card,.faturamento-moderno{ border-radius:34px; }
-    #listaClientes{ max-height:64vh !important; }
-    .cliente-item{ min-height:112px; }
-    .mini-calendario{ border-radius:30px; }
-  }
-
-  @media (max-width: 650px){
-    body{ padding:10px; }
-    .app{ width:100%; }
-    .topo h1{ font-size:1.35rem; }
-    .dashboard{ grid-template-columns:1fr !important; gap:12px; }
-    .grid-3{ grid-template-columns:1fr !important; gap:14px; }
-    .card,.faturamento-moderno{ border-radius:24px; padding:1rem; }
-    .movimento-row{ flex-direction:column; }
-    .movimento-row input,.movimento-row button{ width:100%; flex:auto; }
-    .cliente-item{ align-items:flex-start; padding:14px 12px; gap:10px; }
-    .cliente-avatar{ width:56px; height:56px; }
-    .cliente-acoes{ position:static; margin-left:auto; }
-    .modal-container{ width:96vw !important; max-height:92vh !important; border-radius:26px; padding:18px; }
-    .foto-area{ gap:14px; }
-    .foto-box{ min-width:140px; }
-    .foto-box img{ max-width:150px !important; height:150px !important; }
-    .botoes-rapidos{ position:sticky; bottom:0; background:white; padding-top:10px; }
-  }
-
-  /* Barra de segurança */
-  .luiz-lock-bar{
-    position:fixed;
-    top:14px;
-    right:14px;
-    z-index:99999;
-    display:flex;
-    align-items:center;
-    gap:8px;
-    background:rgba(255,255,255,.94);
-    border:1px solid rgba(210,162,77,.45);
-    box-shadow:0 10px 30px rgba(0,0,0,.14);
-    border-radius:999px;
-    padding:8px 10px 8px 14px;
-    backdrop-filter:blur(12px);
-  }
-  .luiz-lock-status{
-    font-weight:800;
-    color:var(--luiz-escuro);
-    font-size:.78rem;
-    white-space:nowrap;
-  }
-  .luiz-lock-btn{
-    border:0;
-    border-radius:999px;
-    padding:9px 14px;
-    font-weight:900;
-    cursor:pointer;
-    color:white;
-    background:linear-gradient(135deg,var(--luiz-verde),#155226);
-  }
-  .luiz-lock-btn.locked{ background:linear-gradient(135deg,#bb6b57,#8f3e32); }
-  .luiz-lock-btn:hover{ transform:translateY(-1px); }
-
-  .luiz-readonly [data-protegido="true"]{
-    filter:saturate(.72);
-  }
-  .luiz-readonly .btn-verde,
-  .luiz-readonly .btn-vermelho,
-  .luiz-readonly .btn-cliente,
-  .luiz-readonly .btn-primary,
-  .luiz-readonly .btn-danger,
-  .luiz-readonly .btn-warning,
-  .luiz-readonly .btn-editar,
-  .luiz-readonly .btn-excluir,
-  .luiz-readonly .btn-editar-cliente,
-  .luiz-readonly .btn-excluir-cliente,
-  .luiz-readonly .corte-rapido{
-    box-shadow: inset 0 0 0 999px rgba(255,255,255,.20);
-  }
-
-  .luiz-senha-overlay{
-    position:fixed;
-    inset:0;
-    display:none;
-    align-items:center;
-    justify-content:center;
-    z-index:100000;
-    background:rgba(20,28,22,.58);
-    backdrop-filter:blur(8px);
-    padding:16px;
-  }
-  .luiz-senha-box{
-    width:min(92vw,430px);
-    background:#fffdf7;
-    border:1px solid rgba(210,162,77,.42);
-    border-radius:32px;
-    padding:26px;
-    box-shadow:0 25px 80px rgba(0,0,0,.28);
-    text-align:center;
-    color:var(--luiz-escuro);
-  }
-  .luiz-senha-box h2{ margin:0 0 8px; font-size:1.35rem; }
-  .luiz-senha-box p{ margin:0 0 18px; color:#6b7a69; line-height:1.45; }
-  .luiz-senha-input{
-    width:100%;
-    border:1px solid #d7dfd2;
-    border-radius:18px;
-    padding:14px 16px;
-    font-size:1.4rem;
-    text-align:center;
-    letter-spacing:6px;
-    outline:none;
-    background:white;
-  }
-  .luiz-senha-input:focus{ border-color:var(--luiz-ouro); box-shadow:0 0 0 4px rgba(210,162,77,.14); }
-  .luiz-senha-actions{ display:flex; gap:10px; margin-top:16px; }
-  .luiz-senha-actions button{
-    flex:1;
-    border:0;
-    border-radius:999px;
-    padding:12px 14px;
-    font-weight:900;
-    cursor:pointer;
-  }
-  .luiz-confirmar{ background:var(--luiz-verde); color:white; }
-  .luiz-cancelar{ background:#eadfd2; color:#6e5840; }
-  .luiz-senha-erro{ display:none; margin-top:12px; color:#bb4b41; font-weight:800; }
-
-  @media (max-width:650px){
-    .luiz-lock-bar{ top:auto; bottom:12px; right:12px; left:12px; justify-content:space-between; }
-    .luiz-lock-status{ font-size:.72rem; }
-  }
-</style>
-
-<div class="luiz-lock-bar" id="luizLockBar">
-  <span class="luiz-lock-status" id="luizLockStatus">🔒 Protegido</span>
-  <button class="luiz-lock-btn locked" id="luizLockBtn" type="button">Desbloquear</button>
-</div>
-
-<div class="luiz-senha-overlay" id="luizSenhaOverlay" aria-hidden="true">
-  <div class="luiz-senha-box">
-    <h2>🔐 Área protegida</h2>
-    <p>Para alterar clientes, caixa, fotos, cortes, débitos ou apagar dados, digite a senha da família.</p>
-    <input class="luiz-senha-input" id="luizSenhaInput" type="password" inputmode="numeric" maxlength="12" placeholder="••••••">
-    <div class="luiz-senha-actions">
-      <button class="luiz-cancelar" id="luizSenhaCancelar" type="button">Cancelar</button>
-      <button class="luiz-confirmar" id="luizSenhaConfirmar" type="button">Entrar</button>
-    </div>
-    <div class="luiz-senha-erro" id="luizSenhaErro">Senha incorreta.</div>
-  </div>
-</div>
-
-<script>
-(function(){
-  const SENHA_LUIZ = '775522';
-  const KEY_SESSAO = 'barbeariaLuizSessaoLiberada';
-  let callbackLiberado = null;
-
-  function desbloqueado(){ return sessionStorage.getItem(KEY_SESSAO) === 'sim'; }
-  function setDesbloqueado(v){
-    if(v) sessionStorage.setItem(KEY_SESSAO,'sim');
-    else sessionStorage.removeItem(KEY_SESSAO);
-    atualizarVisualSenha();
-  }
-
-  function atualizarVisualSenha(){
-    const livre = desbloqueado();
-    document.body.classList.toggle('luiz-readonly', !livre);
-    const st = document.getElementById('luizLockStatus');
-    const bt = document.getElementById('luizLockBtn');
-    if(st) st.textContent = livre ? '🔓 Edição liberada' : '🔒 Protegido contra alterações';
-    if(bt){
-      bt.textContent = livre ? 'Bloquear' : 'Desbloquear';
-      bt.classList.toggle('locked', !livre);
-    }
-  }
-
-  function abrirSenha(cb){
-    if(desbloqueado()){ if(typeof cb === 'function') cb(); return true; }
-    callbackLiberado = cb || null;
-    const overlay = document.getElementById('luizSenhaOverlay');
-    const input = document.getElementById('luizSenhaInput');
-    const erro = document.getElementById('luizSenhaErro');
-    if(erro) erro.style.display='none';
-    if(overlay){ overlay.style.display='flex'; overlay.setAttribute('aria-hidden','false'); }
-    setTimeout(()=>{ if(input){ input.value=''; input.focus(); } },50);
-    return false;
-  }
-
-  function fecharSenha(){
-    const overlay = document.getElementById('luizSenhaOverlay');
-    if(overlay){ overlay.style.display='none'; overlay.setAttribute('aria-hidden','true'); }
-    callbackLiberado = null;
-  }
-
-  function confirmarSenha(){
-    const input = document.getElementById('luizSenhaInput');
-    const erro = document.getElementById('luizSenhaErro');
-    if(input && input.value === SENHA_LUIZ){
-      setDesbloqueado(true);
-      const cb = callbackLiberado;
-      fecharSenha();
-      if(typeof cb === 'function') setTimeout(cb, 20);
-      if(typeof showToast === 'function') showToast('Edição liberada com senha!', 'success');
-    } else {
-      if(erro) erro.style.display='block';
-      if(input){ input.select(); input.focus(); }
-      if(typeof showToast === 'function') showToast('Senha incorreta', 'error');
-    }
-  }
-
-  window.luizPodeEditar = function(cb){ return abrirSenha(cb); };
-  window.luizSistemaBloquear = function(){ setDesbloqueado(false); if(typeof showToast==='function') showToast('Sistema bloqueado', 'info'); };
-
-  function protegerFuncao(nome){
-    const original = window[nome];
-    if(typeof original !== 'function' || original.__protegidaLuiz) return;
-    const wrapper = function(){
-      const args = arguments;
-      return abrirSenha(()=> original.apply(this, args));
-    };
-    wrapper.__protegidaLuiz = true;
-    window[nome] = wrapper;
-  }
-
-  function protegerBotao(id){
-    const el = document.getElementById(id);
-    if(!el || el.__protegidoLuiz) return;
-    el.__protegidoLuiz = true;
-    el.setAttribute('data-protegido','true');
-    const antigo = el.onclick;
-    el.onclick = function(ev){
-      if(!desbloqueado()){
-        ev && ev.preventDefault && ev.preventDefault();
-        ev && ev.stopImmediatePropagation && ev.stopImmediatePropagation();
-        return abrirSenha(()=>{ if(typeof antigo === 'function') antigo.call(el, ev); });
-      }
-      if(typeof antigo === 'function') return antigo.call(el, ev);
-    };
-  }
-
-  function protegerTudo(){
-    [
-      'editarMovimento','excluirMovimento','editarCliente','excluirCliente',
-      'editarCorteCliente','excluirCorteCliente','salvarEdicaoMovimento','salvarEdicaoCliente',
-      'salvarEdicaoCorte','registrarCorteComValor','registrarCorteCliente','quitarDividaCliente',
-      'voltarDebito','marcarCortePago','marcarCortePendente'
-    ].forEach(protegerFuncao);
-
-    [
-      'btnEntrada','btnSaida','btnAddCliente','btnCortarModal','btnQuitarPendencia',
-      'btnConfirmarEdicao','btnConfirmarEdicaoCliente','btnConfirmarEdicaoCorte',
-      'btnLimparTudo','btnImportarBackup','btnAddFotoAntes','btnAddFotoDepois',
-      'btnAddFotoPerfil','btnPagamentoPIX','btnPagamentoDinheiro','btnPagamentoDebito',
-      'btnPagamentoDebitoPix'
-    ].forEach(protegerBotao);
-
-    document.querySelectorAll('button[onclick*="editar"],button[onclick*="excluir"],button[onclick*="delet"],button[onclick*="pago"],button[onclick*="debito"],button[onclick*="Debito"]').forEach(btn=>{
-      if(btn.__delegadoLuiz) return;
-      btn.__delegadoLuiz = true;
-      btn.setAttribute('data-protegido','true');
-      btn.addEventListener('click', function(ev){
-        if(!desbloqueado()){
-          ev.preventDefault();
-          ev.stopImmediatePropagation();
-          abrirSenha();
-        }
-      }, true);
-    });
-  }
-
-  document.addEventListener('DOMContentLoaded', function(){
-    const btn = document.getElementById('luizLockBtn');
-    const conf = document.getElementById('luizSenhaConfirmar');
-    const canc = document.getElementById('luizSenhaCancelar');
-    const inp = document.getElementById('luizSenhaInput');
-    const overlay = document.getElementById('luizSenhaOverlay');
-
-    if(btn) btn.addEventListener('click', function(){ desbloqueado() ? setDesbloqueado(false) : abrirSenha(); });
-    if(conf) conf.addEventListener('click', confirmarSenha);
-    if(canc) canc.addEventListener('click', fecharSenha);
-    if(inp) inp.addEventListener('keydown', e => { if(e.key === 'Enter') confirmarSenha(); if(e.key === 'Escape') fecharSenha(); });
-    if(overlay) overlay.addEventListener('click', e => { if(e.target === overlay) fecharSenha(); });
-    document.addEventListener('keydown', e => { if(e.key === 'Escape') fecharSenha(); });
-
-    atualizarVisualSenha();
-    setTimeout(protegerTudo, 300);
-    setTimeout(protegerTudo, 1000);
-    setInterval(protegerTudo, 2500);
-  });
-})();
-</script>
 
 
+<!-- Proteção por senha removida para evitar tela branca/travamento automático -->
 
 <style id="luiz-vip-manual-beneficios-css">
   .btn-vip-manual{
@@ -3999,73 +3838,6 @@
     setInterval(colocarBotoesVip, 2500);
   });
 })();
-</script>
-
-
-<!-- ===== CORREÇÃO ANTI-TELA-BRANCA LUIZ ===== -->
-<style id="correcao-tela-branca-luiz">
-  html, body {
-    width: 100% !important;
-    min-height: 100vh !important;
-    overflow-x: hidden !important;
-  }
-
-  body {
-    display: block !important;
-  }
-
-  .app {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    position: relative !important;
-    left: auto !important;
-    right: auto !important;
-    transform: none !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    width: min(100%, 1500px) !important;
-  }
-
-  /* Em computador normal, mantém tudo bem organizado em 3 colunas */
-  @media (min-width: 901px) and (orientation: landscape) {
-    .dashboard {
-      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    }
-    .grid-3 {
-      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    }
-  }
-
-  /* Evita os cards de cliente ficarem cortando número/texto */
-  .cliente-item,
-  .cliente-info,
-  .cliente-nome,
-  .cliente-linha-top,
-  .cliente-linha-baixo {
-    max-width: 100% !important;
-    overflow: hidden !important;
-  }
-
-  .cliente-whats-mini,
-  .cliente-linha-top strong {
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-  }
-</style>
-
-<script id="correcao-tela-branca-luiz-js">
-  // Garante que o sistema nunca fique escondido por erro de classe/login.
-  document.addEventListener('DOMContentLoaded', function () {
-    document.body.classList.add('luiz-logado');
-    const app = document.querySelector('.app');
-    if (app) {
-      app.style.setProperty('display', 'block', 'important');
-      app.style.setProperty('visibility', 'visible', 'important');
-      app.style.setProperty('opacity', '1', 'important');
-    }
-  });
 </script>
 
 </body>
